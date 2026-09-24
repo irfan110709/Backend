@@ -1,98 +1,43 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
 
-export const dynamic = 'force-dynamic';
+// Contoh database sementara di memory (Ganti dengan Prisma/Kysely/Database kamu)
+let products = [
+  { id: '1', title: 'Mouse Wireless', price: 150000, stock: 10 },
+  { id: '2', title: 'Keyboard Mechanical', price: 450000, stock: 5 },
+];
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-// Handler untuk Preflight Request CORS
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
-}
-
-// 1. GET: Ambil semua produk dari Supabase
+// GET: Ambil semua data produk
 export async function GET() {
-  try {
-    const { data, error } = await supabaseAdmin
-        .from('products')
-        .select('*');
-
-    if (error) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Gagal mengambil data produk',
-          error_message: error.message,
-        },
-        { status: 400, headers: corsHeaders }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: true,
-        data,
-      },
-      { status: 200, headers: corsHeaders }
-    );
-  } catch (err: any) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: err?.message || 'Server Error',
-      },
-      { status: 500, headers: corsHeaders }
-    );
-  }
+  return NextResponse.json({
+    success: true,
+    data: products,
+  });
 }
 
-// 2. POST: Tambah produk baru ke Supabase
+// POST: Tambah produk baru
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { title, price, stock } = body;
 
-    const { data, error } = await supabaseAdmin
-      .from('products')
-      .insert([
-        {
-          title,
-          price: Number(price),
-          stock: Number(stock),
-        },
-      ])
-      .select();
+    const newProduct = {
+      id: Date.now().toString(),
+      title,
+      price: Number(price),
+      stock: Number(stock),
+    };
 
-    if (error) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Gagal menambahkan produk',
-          error_message: error.message,
-        },
-        { status: 400, headers: corsHeaders }
-      );
-    }
+    products.push(newProduct);
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Produk berhasil ditambahkan!',
-        data: data[0],
-      },
-      { status: 201, headers: corsHeaders }
-    );
-  } catch (err: any) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: err?.message || 'Server Error',
-      },
-      { status: 500, headers: corsHeaders }
-    );
+    return NextResponse.json({
+      success: true,
+      message: 'Produk berhasil ditambahkan!',
+      data: newProduct,
+    }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({
+      success: false,
+      message: 'Gagal menambah produk',
+    }, { status: 500 });
   }
 }
